@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+
+BASE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+MAVEN_USER_HOME="${MAVEN_USER_HOME:-$HOME/.m2}"
+DISTRIBUTION_URL=$(grep '^distributionUrl=' "$BASE_DIR/.mvn/wrapper/maven-wrapper.properties" | cut -d= -f2-)
+
+MAVEN_VERSION=3.9.9
+DIST_DIR="$MAVEN_USER_HOME/wrapper/dists/apache-maven-$MAVEN_VERSION"
+MAVEN_HOME="$DIST_DIR/apache-maven-$MAVEN_VERSION"
+MAVEN_ZIP="$DIST_DIR/apache-maven-$MAVEN_VERSION-bin.zip"
+
+if [ ! -x "$MAVEN_HOME/bin/mvn" ]; then
+  mkdir -p "$DIST_DIR"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$DISTRIBUTION_URL" -o "$MAVEN_ZIP"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q "$DISTRIBUTION_URL" -O "$MAVEN_ZIP"
+  else
+    echo "No se encontro curl ni wget para descargar Maven." >&2
+    exit 1
+  fi
+  unzip -q -o "$MAVEN_ZIP" -d "$DIST_DIR"
+fi
+
+exec "$MAVEN_HOME/bin/mvn" "$@"
